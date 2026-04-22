@@ -8,7 +8,7 @@ The `data/` folder is where all input files for the pipeline must be placed. Thi
 
 ```
 data/
-├── 7T1911CI_07122023.mat                                ← REQUIRED before Step 1
+├── subject.mat                                          ← REQUIRED before Step 1
 ├── sub-..._ses-01_task-rest_run-01_bold.json            ← REQUIRED before Step 1
 ├── sub-..._ses-01_task-rest_run-02_bold.json            ← REQUIRED before Step 1
 ├── sub-..._ses-01_task-AP_run-01_bold.json              ← REQUIRED before Step 1
