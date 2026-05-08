@@ -16,7 +16,6 @@ import os
 import scipy.io as sio
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 from matplotlib.patches import Rectangle
 from datetime import datetime
 
@@ -231,128 +230,106 @@ def create_visualization(mat_path, json_path, output_path):
     dicominfo_path = os.path.join(data_dir, 'dicominfo_ses-01.tsv')
     durations = load_dicominfo_durations(dicominfo_path, mapping['pseudotime_mapping'], data_dir)
 
+    rec_dur = len(time_vector) / 1000
+    n_tasks = len(sequences)
     print(f"\nLoaded {len(channels)} physiological channels")
-    print(f"Total recording duration: {len(time_vector)/60:.1f} minutes ({len(time_vector):.0f} seconds)")
-    print(f"Found {sum(len(runs) for runs in sequences.values())} sequences across {len(sequences)} tasks")
+    print(f"Total recording duration: {rec_dur/60:.1f} minutes ({rec_dur:.0f} s)")
+    print(f"Found {sum(len(runs) for runs in sequences.values())} sequences across {n_tasks} tasks")
 
-    # Create figure with multiple subplots
-    fig = plt.figure(figsize=(18, 15))
-
-    # Main signal plot
-    ax1 = plt.subplot(5, 1, 1)
-    ax2 = plt.subplot(5, 1, 2)
-    ax3 = plt.subplot(5, 1, 3)
-    ax4 = plt.subplot(5, 1, 4)
-    ax_timeline = plt.subplot(5, 1, 5)
-
-    # Plot physiological signals
-    print("\nPlotting physiological signals...")
-
-    # RESP channel
-    if 'RESP' in channels:
-        resp = channels['RESP']
-        resp_time = np.arange(len(resp)) / 1000
-        ax1.plot(resp_time, resp, linewidth=0.5, color='blue', alpha=0.7)
-        ax1.set_ylabel('RESP', fontsize=10, fontweight='bold')
-        ax1.set_xlim(0, len(time_vector) / 1000)
-        ax1.grid(True, alpha=0.3)
-        ax1.set_title('Physiological Recording Timeline with Sequence Acquisitions', fontsize=14, fontweight='bold')
-
-    # RPIEZO (heart rate) channel
-    if 'RPIEZO' in channels:
-        piezo = channels['RPIEZO']
-        piezo_time = np.arange(len(piezo)) / 1000
-        ax2.plot(piezo_time, piezo, linewidth=0.5, color='red', alpha=0.7)
-        ax2.set_ylabel('RPIEZO\n(Heart Rate)', fontsize=10, fontweight='bold')
-        ax2.set_xlim(0, len(time_vector) / 1000)
-        ax2.grid(True, alpha=0.3)
-
-    # STIMTRIG channel
-    if 'STIMTRIG' in channels:
-        stimtrig = channels['STIMTRIG']
-        stimtrig_time = np.arange(len(stimtrig)) / 1000
-        ax3.plot(stimtrig_time, stimtrig, linewidth=0.5, color='orange', alpha=0.7)
-        ax3.set_ylabel('STIMTRIG\n(Stimulus)', fontsize=10, fontweight='bold')
-        ax3.set_xlim(0, len(time_vector) / 1000)
-        ax3.grid(True, alpha=0.3)
-
-    # MRTRIG channel
-    if 'MRTRIG' in channels:
-        mrtrig = channels['MRTRIG']
-        mrtrig_time = np.arange(len(mrtrig)) / 1000
-        ax4.plot(mrtrig_time, mrtrig, linewidth=0.5, color='green', alpha=0.7)
-        ax4.set_ylabel('MRTRIG\n(MRI Trigger)', fontsize=10, fontweight='bold')
-        ax4.set_xlim(0, len(time_vector) / 1000)
-        ax4.grid(True, alpha=0.3)
-
-    # Timeline with acquisition periods
-    print("Plotting acquisition timeline...")
-
-    # Color map for different task types
     colors = {
-        'rest': '#1f77b4',          # blue
-        'BlockStim': '#ff7f0e',     # orange
-        'ContinuousStim': '#2ca02c', # green
-        'AP': '#d62728',            # red
-        'PA': '#9467bd',            # purple
-        'FreeBreath': '#8c564b',    # brown
-        'PaceBreath': '#e377c2'     # pink
+        'rest':           '#1f77b4',
+        'BlockStim':      '#ff7f0e',
+        'ContinuousStim': '#2ca02c',
+        'AP':             '#d62728',
+        'PA':             '#9467bd',
+        'FreeBreath':     '#8c564b',
+        'PaceBreath':     '#e377c2',
+        'BEAT':           '#bcbd22',
     }
 
-    # Plot timeline bars
+    # All sequences sorted by pseudotime (used for vertical onset lines)
+    all_seqs = sorted(
+        [(task, seq) for task, runs in sequences.items() for seq in runs],
+        key=lambda x: x[1]['pseudotime']
+    )
+
+    # All 5 panels share the same x-axis so signal and timeline are always aligned
+    n_tl_rows = max(2, n_tasks)
+    fig, axes = plt.subplots(
+        5, 1,
+        figsize=(max(30, int(rec_dur / 40)), 12 + n_tl_rows),
+        sharex=True,
+        gridspec_kw={'height_ratios': [2, 2, 1, 2, n_tl_rows]}
+    )
+    ax_resp, ax_piezo, ax_stim, ax_mr, ax_tl = axes
+    fig.suptitle('Physiological Recording — Acquisition Timeline', fontsize=13, fontweight='bold')
+
+    print("\nPlotting physiological signals...")
+
+    # ── Signal panels ──────────────────────────────────────────────────────────
+    sig_cfg = [
+        (ax_resp,  'RESP',    'blue'),
+        (ax_piezo, 'RPIEZO',  'red'),
+        (ax_stim,  'STIMTRIG','orange'),
+        (ax_mr,    'MRTRIG',  'green'),
+    ]
+    for ax, name, col in sig_cfg:
+        if name in channels:
+            sig = channels[name]
+            t   = np.arange(len(sig)) / 1000
+            ax.plot(t, sig, linewidth=0.5, color=col, alpha=0.8)
+        ax.set_ylabel(name, fontsize=9, fontweight='bold')
+        ax.grid(True, alpha=0.2)
+        # Vertical dashed line at each sequence onset — same x-coords as the timeline bars
+        for task, seq in all_seqs:
+            ax.axvline(seq['pseudotime'], color=colors.get(task, '#888'),
+                       linewidth=0.8, alpha=0.5, linestyle='--')
+
+    ax_resp.set_title('Physiological Recording — Sequence Onsets', fontsize=12, fontweight='bold')
+
+    # Sequence labels on the MRTRIG panel only (avoids clutter)
+    if 'MRTRIG' in channels:
+        mr_sig   = channels['MRTRIG']
+        label_y  = float(np.max(mr_sig)) * 0.92
+        for task, seq in all_seqs:
+            ax_mr.text(seq['pseudotime'] + 1, label_y,
+                       f"{task} r{seq['run']}", fontsize=6,
+                       rotation=90, va='top', ha='left',
+                       color=colors.get(task, '#333'), clip_on=True)
+
+    # ── Timeline panel ─────────────────────────────────────────────────────────
+    print("Plotting acquisition timeline...")
     y_pos = 0
     task_positions = {}
-    max_pseudotime = max(max(seq['pseudotime'] for seq in runs)
-                         for runs in sequences.values())
-
     for task in sorted(sequences.keys()):
         task_positions[task] = y_pos
-        color = colors.get(task, '#999999')
-
+        c = colors.get(task, '#999999')
         for seq in sequences[task]:
-            duration = durations.get(seq['json'], 120)
-
-            rect = Rectangle((seq['pseudotime'], y_pos - 0.3),
-                            duration, 0.6,
-                            linewidth=1, edgecolor='black',
-                            facecolor=color, alpha=0.7)
-            ax_timeline.add_patch(rect)
-
-            # Add label
-            label = f"{task} (run-{seq['run']})"
-            ax_timeline.text(seq['pseudotime'] + duration/2, y_pos, label,
-                           ha='center', va='center', fontsize=8, fontweight='bold')
-
+            dur   = durations.get(seq['json'], 120)
+            start = seq['pseudotime']
+            rect  = Rectangle((start, y_pos - 0.4), dur, 0.8,
+                               linewidth=1, edgecolor='black', facecolor=c, alpha=0.75)
+            ax_tl.add_patch(rect)
+            if dur > 15:
+                ax_tl.text(start + dur / 2, y_pos, f"r{seq['run']}",
+                           ha='center', va='center', fontsize=7, fontweight='bold')
         y_pos += 1
 
-    max_end = max(
-        seq['pseudotime'] + durations.get(seq['json'], 120)
-        for runs in sequences.values() for seq in runs
-    )
-    ax_timeline.set_xlim(0, max_end + 60)
-    ax_timeline.set_ylim(-0.5, y_pos + 0.5)
-    ax_timeline.set_xlabel('Pseudotime (seconds)', fontsize=11, fontweight='bold')
-    ax_timeline.set_ylabel('Sequence', fontsize=10, fontweight='bold')
-    ax_timeline.set_yticks(list(task_positions.values()))
-    ax_timeline.set_yticklabels(list(task_positions.keys()))
-    ax_timeline.grid(True, alpha=0.3, axis='x')
-    ax_timeline.set_title('Acquisition Timeline (Relative to First BOLD)', fontsize=11, fontweight='bold')
+    ax_tl.set_ylim(-0.6, y_pos + 0.1)
+    ax_tl.set_xlabel('Physio recording time (s)', fontsize=11, fontweight='bold')
+    ax_tl.set_yticks(list(task_positions.values()))
+    ax_tl.set_yticklabels(list(task_positions.keys()), fontsize=9)
+    ax_tl.grid(True, alpha=0.2, axis='x')
 
-    # Add legend
-    legend_patches = [mpatches.Patch(color=color, label=task, alpha=0.7)
-                     for task, color in colors.items() if task in sequences]
-    ax_timeline.legend(handles=legend_patches, loc='upper right', fontsize=9)
-
-    # Connect time axes for reference
-    for ax in [ax1, ax2, ax3, ax4]:
-        ax.set_xlabel('')
-    ax4.set_xlabel('Time in Recording (seconds)', fontsize=11, fontweight='bold')
+    # Shared x-axis range = full physio recording (set once, propagates to all panels)
+    ax_resp.set_xlim(0, rec_dur)
 
     plt.tight_layout()
 
-    # Save figure
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     print(f"\nSaving visualization to: {output_path}")
     plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    plt.close(fig)
     print("✓ Visualization saved!")
 
     # Create a summary statistics figure

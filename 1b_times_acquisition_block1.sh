@@ -222,8 +222,9 @@ def main():
     first_trig_idx   = int(trigs[0])
     first_trig_ptime = first_trig_idx / SAMPLING_RATE
 
-    print(f"\nFirst trigger: sample {first_trig_idx}  →  pseudotime {first_trig_ptime:.3f} s")
-    print(f"  (anchored to task-rest_run-01, real time {rest_info['acq_time']})")
+    print(f"\nFirst trigger: sample {first_trig_idx}  →  physio time {first_trig_ptime:.3f} s")
+    print(f"  (anchor: task-rest_run-01, real time {rest_info['acq_time']})")
+    print(f"  Pseudotime = physio time; sequences before rest land at < {first_trig_ptime:.1f} s")
 
     # ── STEP 3: Compute pseudotimes ────────────────────────
     print("\n=== STEP 3: Pseudotime for All Sequences ===\n")

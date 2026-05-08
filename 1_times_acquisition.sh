@@ -195,11 +195,12 @@ def main():
         print("ERROR: No triggers found in MRTRIG channel!")
         sys.exit(1)
 
-    first_trig_idx    = int(trigs[0])
-    first_trig_ptime  = first_trig_idx / SAMPLING_RATE
+    first_trig_idx   = int(trigs[0])
+    first_trig_ptime = first_trig_idx / SAMPLING_RATE
 
-    print(f"\nFirst trigger: sample {first_trig_idx}  →  pseudotime {first_trig_ptime:.3f} s")
-    print(f"  (anchored to task-rest_run-01, real time {rest_info['acq_time']})")
+    print(f"\nFirst trigger: sample {first_trig_idx}  →  physio time {first_trig_ptime:.3f} s")
+    print(f"  (anchor: task-rest_run-01, real time {rest_info['acq_time']})")
+    print(f"  Pseudotime = physio time; sequences before rest land at < {first_trig_ptime:.1f} s")
 
     # ── STEP 3: Compute pseudotimes ────────────────────────
     print("\n=== STEP 3: Pseudotime for All Sequences ===\n")
@@ -267,7 +268,7 @@ def main():
             'sequence':                  'task-rest_run-01',
             'real_time':                 rest_info['acq_time'],
             'real_time_sec':             rest_acq_sec,
-            'first_trigger_sample':      first_trig_idx,
+            'first_trigger_sample':         first_trig_idx,
             'first_trigger_pseudotime_sec': first_trig_ptime
         },
         'mrtrig_length_samples': len(mrtrig),
