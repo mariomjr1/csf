@@ -1,6 +1,6 @@
 # Step 3 — Parse Segments
 
-**Scripts:** `3_parse.py` (Classic) · `3b_parse_block1.py` (Block1)  
+**Scripts:** `step03_parse.py` (Classic) · `step03b_parse_block1.py` (Block1)  
 **Language:** Python  
 **Run time:** Several minutes (loads the full recording, then writes one `.mat` + one `.png` per sequence)
 
@@ -21,8 +21,8 @@ For each sequence it produces two output files:
 
 | Your `.mat` file contains | Use this script |
 |--------------------------|----------------|
-| `data`, `datastart`, `dataend` | `3_parse.py` (Classic) |
-| `data_block1` (4 × N array) | `3b_parse_block1.py` (Block1) |
+| `data`, `datastart`, `dataend` | `step03_parse.py` (Classic) |
+| `data_block1` (4 × N array) | `step03b_parse_block1.py` (Block1) |
 
 Use the same format you selected for Steps 1 and 2. Select it with the **MAT file format** radio buttons in the GUI before clicking Run.
 
@@ -74,12 +74,12 @@ Go to the **"3 · Parse Segments"** tab, select the correct **MAT file format**,
 
 **Classic format:**
 ```bash
-python 3_parse.py /path/to/data /path/to/parsed
+python step03_parse.py /path/to/data /path/to/parsed
 ```
 
 **Block1 format:**
 ```bash
-python 3b_parse_block1.py /path/to/data /path/to/parsed
+python step03b_parse_block1.py /path/to/data /path/to/parsed
 ```
 
 The first argument is the data folder. The second is the output folder. If the output folder doesn't exist it will be created.
@@ -142,10 +142,10 @@ The title of each plot shows the sequence name, pseudotime start, and duration.
 
 The script loads the full `.mat` recording into memory. The channel extraction differs between variants:
 
-**Classic (`3_parse.py`):**  
+**Classic (`step03_parse.py`):**  
 Reads `data`, `datastart`, and `dataend`. Extracts each channel as `data[datastart[i]-1 : dataend[i]]`.
 
-**Block1 (`3b_parse_block1.py`):**  
+**Block1 (`step03b_parse_block1.py`):**  
 Reads `data_block1` (shape 4 × N). Extracts each channel as `data_block1[i].flatten()`.
 
 Both variants produce the same channel dictionary `{name: array}` for all downstream steps.

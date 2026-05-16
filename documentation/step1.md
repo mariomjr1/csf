@@ -1,6 +1,6 @@
 # Step 1 — Compute Pseudotime
 
-**Scripts:** `1_times_acquisition.sh` (Classic) · `1b_times_acquisition_block1.sh` (Block1)  
+**Scripts:** `step01_times_acquisition.sh` (Classic) · `step01b_times_acquisition_block1.sh` (Block1)  
 **Language:** Bash shell script (embeds a Python script internally)  
 **Run time:** A few seconds to under a minute
 
@@ -25,8 +25,8 @@ It does this in five stages:
 
 | Your `.mat` file contains | Use this script |
 |--------------------------|----------------|
-| `data`, `datastart`, `dataend` | `1_times_acquisition.sh` (Classic) |
-| `data_block1` (4 × N array) | `1b_times_acquisition_block1.sh` (Block1) |
+| `data`, `datastart`, `dataend` | `step01_times_acquisition.sh` (Classic) |
+| `data_block1` (4 × N array) | `step01b_times_acquisition_block1.sh` (Block1) |
 
 Select the correct format using the **MAT file format** radio buttons in the GUI before clicking Run. Both scripts produce the same `pseudotime_mapping.json` output. The block1 variant additionally records `"mat_format": "block1"` in the JSON.
 
@@ -60,12 +60,12 @@ Open the GUI (`bash gui/run.sh`), go to the **"1 · Compute Pseudotime"** tab, s
 
 **Classic format:**
 ```bash
-bash 1_times_acquisition.sh /path/to/data subject.mat
+bash step01_times_acquisition.sh /path/to/data subject.mat
 ```
 
 **Block1 format:**
 ```bash
-bash 1b_times_acquisition_block1.sh /path/to/data subject.mat
+bash step01b_times_acquisition_block1.sh /path/to/data subject.mat
 ```
 
 The first argument is the full path to the data folder. The second is just the filename of the `.mat` file (not its full path — the script assumes it is inside the data folder).

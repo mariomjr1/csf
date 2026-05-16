@@ -11,9 +11,9 @@ Each step has two variants — one per LabChart export format. Select the correc
 
 | Step | Classic script | Block1 script | What it does |
 |------|---------------|---------------|-------------|
-| 1 | `1_times_acquisition.sh` | `1b_times_acquisition_block1.sh` | Detects MR triggers, computes pseudotime for each sequence, saves `pseudotime_mapping.json` |
-| 2 | `2_plot_pseudotime_quality.py` | `2b_plot_pseudotime_quality_block1.py` | Visualises all 4 channels with colour-coded acquisition bars |
-| 3 | `3_parse.py` | `3b_parse_block1.py` | Cuts the recording into per-sequence `.mat` files and plots |
+| 1 | `step01_times_acquisition.sh` | `step01b_times_acquisition_block1.sh` | Detects MR triggers, computes pseudotime for each sequence, saves `pseudotime_mapping.json` |
+| 2 | `step02_plot_pseudotime_quality.py` | `step02b_plot_pseudotime_quality_block1.py` | Visualises all 4 channels with colour-coded acquisition bars |
+| 3 | `step03_parse.py` | `step03b_parse_block1.py` | Cuts the recording into per-sequence `.mat` files and plots |
 
 Run all steps through the graphical interface: `bash gui/run.sh [conda_env_name]`
 
@@ -63,9 +63,9 @@ See the full walkthrough in [documentation/gui.md](documentation/gui.md).
 | [documentation/concepts.md](documentation/concepts.md) | Pseudotime, the 4 channels, MRI triggers, file formats |
 | [documentation/installation.md](documentation/installation.md) | Python environment setup and troubleshooting |
 | [documentation/data_folder.md](documentation/data_folder.md) | Every required file explained |
-| [documentation/step1.md](documentation/step1.md) | `1_times_acquisition.sh` — how it works |
-| [documentation/step2.md](documentation/step2.md) | `2_plot_pseudotime_quality.py` — reading the plots |
-| [documentation/step3.md](documentation/step3.md) | `3_parse.py` — output files and the unmatched log |
+| [documentation/step1.md](documentation/step1.md) | `step01_times_acquisition.sh` — how it works |
+| [documentation/step2.md](documentation/step2.md) | `step02_plot_pseudotime_quality.py` — reading the plots |
+| [documentation/step3.md](documentation/step3.md) | `step03_parse.py` — output files and the unmatched log |
 | [documentation/gui.md](documentation/gui.md) | GUI walkthrough, every field explained |
 
 ---
@@ -74,12 +74,12 @@ See the full walkthrough in [documentation/gui.md](documentation/gui.md).
 
 ```
 pseudotime/
-├── 1_times_acquisition.sh            ← Step 1 — classic format
-├── 1b_times_acquisition_block1.sh    ← Step 1 — block1 format
-├── 2_plot_pseudotime_quality.py      ← Step 2 — classic format
-├── 2b_plot_pseudotime_quality_block1.py  ← Step 2 — block1 format
-├── 3_parse.py                        ← Step 3 — classic format
-├── 3b_parse_block1.py                ← Step 3 — block1 format
+├── step01_times_acquisition.sh            ← Step 1 — classic format
+├── step01b_times_acquisition_block1.sh    ← Step 1 — block1 format
+├── step02_plot_pseudotime_quality.py      ← Step 2 — classic format
+├── step02b_plot_pseudotime_quality_block1.py  ← Step 2 — block1 format
+├── step03_parse.py                        ← Step 3 — classic format
+├── step03b_parse_block1.py                ← Step 3 — block1 format
 ├── gui/
 │   ├── app.py        ← main GUI window (format selector on every step)
 │   ├── runner.py     ← thread-safe subprocess runner

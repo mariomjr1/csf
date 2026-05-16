@@ -2,9 +2,9 @@
 """
 Pseudotime Pipeline GUI
 Wraps:
-  Step 1 — 1_times_acquisition.sh
-  Step 2 — 2_plot_pseudotime_quality.py
-  Step 3 — 3_parse.py
+  Step 1 — step01_times_acquisition.sh
+  Step 2 — step02_plot_pseudotime_quality.py
+  Step 3 — step03_parse.py
 
 Run via:  bash run.sh   (activates Neuroimaging conda env automatically)
 """
@@ -119,12 +119,12 @@ class Console(ttk.Frame):
 # ── Step panels ────────────────────────────────────────────────────────────────
 
 class Step1Panel(ttk.Frame):
-    """Compute pseudotime — wraps 1_times_acquisition.sh or 1b_times_acquisition_block1.sh."""
+    """Compute pseudotime — wraps step01_times_acquisition.sh or step01b_times_acquisition_block1.sh."""
 
     _SCRIPTS = {
-        "classic": ("1_times_acquisition.sh",
+        "classic": ("step01_times_acquisition.sh",
                     "Classic  —  data / datastart / dataend"),
-        "block1":  ("1b_times_acquisition_block1.sh",
+        "block1":  ("step01b_times_acquisition_block1.sh",
                     "Block1   —  data_block1  (4 × N array)"),
     }
 
@@ -158,7 +158,7 @@ class Step1Panel(ttk.Frame):
             ).pack(side="left", padx=(0, 20))
 
         self._fmt_hint = ttk.Label(fmt_frame, foreground="gray",
-                                   text="script: 1_times_acquisition.sh")
+                                   text="script: step01_times_acquisition.sh")
         self._fmt_hint.pack(side="left")
 
         # ── Path rows ──────────────────────────────────────────────────────
@@ -247,11 +247,11 @@ class Step1Panel(ttk.Frame):
 
 
 class Step2Panel(ttk.Frame):
-    """Plot pseudotime quality — wraps 2_plot_pseudotime_quality.py or block1 variant."""
+    """Plot pseudotime quality — wraps step02_plot_pseudotime_quality.py or block1 variant."""
 
     _SCRIPTS = {
-        "classic": "2_plot_pseudotime_quality.py",
-        "block1":  "2b_plot_pseudotime_quality_block1.py",
+        "classic": "step02_plot_pseudotime_quality.py",
+        "block1":  "step02b_plot_pseudotime_quality_block1.py",
     }
 
     def __init__(self, parent, console, status_var, runner, python_var, **kwargs):
@@ -371,11 +371,11 @@ class Step2Panel(ttk.Frame):
 
 
 class Step3Panel(ttk.Frame):
-    """Parse segments — wraps 3_parse.py or 3b_parse_block1.py."""
+    """Parse segments — wraps step03_parse.py or step03b_parse_block1.py."""
 
     _SCRIPTS = {
-        "classic": "3_parse.py",
-        "block1":  "3b_parse_block1.py",
+        "classic": "step03_parse.py",
+        "block1":  "step03b_parse_block1.py",
     }
 
     def __init__(self, parent, console, status_var, runner, python_var, **kwargs):

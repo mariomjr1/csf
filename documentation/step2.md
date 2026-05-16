@@ -1,6 +1,6 @@
 # Step 2 — Plot Pseudotime Quality
 
-**Scripts:** `2_plot_pseudotime_quality.py` (Classic) · `2b_plot_pseudotime_quality_block1.py` (Block1)  
+**Scripts:** `step02_plot_pseudotime_quality.py` (Classic) · `step02b_plot_pseudotime_quality_block1.py` (Block1)  
 **Language:** Python  
 **Run time:** 1–3 minutes (loading the recording into memory and rendering large plots)
 
@@ -16,8 +16,8 @@ Step 2 creates two image files that let you **visually verify** that the pseudot
 
 | Your `.mat` file contains | Use this script |
 |--------------------------|----------------|
-| `data`, `datastart`, `dataend` | `2_plot_pseudotime_quality.py` (Classic) |
-| `data_block1` (4 × N array) | `2b_plot_pseudotime_quality_block1.py` (Block1) |
+| `data`, `datastart`, `dataend` | `step02_plot_pseudotime_quality.py` (Classic) |
+| `data_block1` (4 × N array) | `step02b_plot_pseudotime_quality_block1.py` (Block1) |
 
 Use the same format you selected for Step 1. Select it with the **MAT file format** radio buttons in the GUI before clicking Run.
 
@@ -52,7 +52,7 @@ Go to the **"2 · Plot Quality"** tab, select the correct **MAT file format**, f
 
 **Classic format:**
 ```bash
-python 2_plot_pseudotime_quality.py \
+python step02_plot_pseudotime_quality.py \
   /path/to/data/subject.mat \
   /path/to/data/pseudotime_mapping.json \
   /path/to/output/pseudotime_plot.png
@@ -60,7 +60,7 @@ python 2_plot_pseudotime_quality.py \
 
 **Block1 format:**
 ```bash
-python 2b_plot_pseudotime_quality_block1.py \
+python step02b_plot_pseudotime_quality_block1.py \
   /path/to/data/subject.mat \
   /path/to/data/pseudotime_mapping.json \
   /path/to/output/pseudotime_plot.png
@@ -130,10 +130,10 @@ A text summary including:
 
 The channel extraction differs between the two script variants:
 
-**Classic (`2_plot_pseudotime_quality.py`):**  
+**Classic (`step02_plot_pseudotime_quality.py`):**  
 Reads `data`, `datastart`, and `dataend` from the `.mat` file. Extracts each channel as `data[datastart[i]-1 : dataend[i]]`.
 
-**Block1 (`2b_plot_pseudotime_quality_block1.py`):**  
+**Block1 (`step02b_plot_pseudotime_quality_block1.py`):**  
 Reads `data_block1` (shape 4 × N). Extracts each channel as `data_block1[i].flatten()`. No index arrays needed.
 
 Both variants create a time vector in seconds by dividing each sample index by 1000. All subsequent plotting and statistics code is identical.

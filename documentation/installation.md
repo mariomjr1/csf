@@ -106,11 +106,11 @@ conda install -n <your_env> tk
 If the GUI shows "Script not found", the **Scripts root** field at the top of the GUI is pointing to the wrong folder. It should point to the `pseudotime/` folder that contains all six pipeline scripts:
 
 ```
-1_times_acquisition.sh
-1b_times_acquisition_block1.sh
+step01_times_acquisition.sh
+step01b_times_acquisition_block1.sh
 2_plot_pseudotime_quality.py
 2b_plot_pseudotime_quality_block1.py
-3_parse.py
+step03_parse.py
 3b_parse_block1.py
 ```
 
@@ -129,7 +129,7 @@ or:
 
 ```
 ERROR: 'data_block1' key not found in this .mat file.
-       Use 3_parse.py instead.
+       Use step03_parse.py instead.
 ```
 
 you have selected the Block1 variant for a Classic-format file (or vice versa). Go back to the step tab, switch the **MAT file format** radio button to the other option, and re-run.

@@ -90,8 +90,8 @@ Each step tab has a **MAT file format** panel with two radio buttons:
 
 | Option | Selects script | Use when |
 |--------|---------------|----------|
-| **Classic** — data / datastart / dataend | `1_times_acquisition.sh` / `2_plot_pseudotime_quality.py` / `3_parse.py` | Your `.mat` file has `data`, `datastart`, `dataend` keys |
-| **Block1** — data_block1 (4 × N array) | `1b_times_acquisition_block1.sh` / `2b_plot_pseudotime_quality_block1.py` / `3b_parse_block1.py` | Your `.mat` file has a `data_block1` key |
+| **Classic** — data / datastart / dataend | `step01_times_acquisition.sh` / `step02_plot_pseudotime_quality.py` / `step03_parse.py` | Your `.mat` file has `data`, `datastart`, `dataend` keys |
+| **Block1** — data_block1 (4 × N array) | `step01b_times_acquisition_block1.sh` / `step02b_plot_pseudotime_quality_block1.py` / `step03b_parse_block1.py` | Your `.mat` file has a `data_block1` key |
 
 A hint label next to the radio buttons always shows the exact script name that will run. If you are unsure which format your file uses, open it in MATLAB or Python and check whether `data_block1` exists.
 
@@ -99,8 +99,8 @@ A hint label next to the radio buttons always shows the exact script name that w
 
 ### Tab: 1 · Compute Pseudotime
 
-**What runs:** `bash 1_times_acquisition.sh <data_folder> <mat_filename> <python_exe>`  
-or `bash 1b_times_acquisition_block1.sh <data_folder> <mat_filename> <python_exe>` (Block1)
+**What runs:** `bash step01_times_acquisition.sh <data_folder> <mat_filename> <python_exe>`  
+or `bash step01b_times_acquisition_block1.sh <data_folder> <mat_filename> <python_exe>` (Block1)
 
 | Field | What to put here |
 |-------|-----------------|
@@ -120,8 +120,8 @@ or `bash 1b_times_acquisition_block1.sh <data_folder> <mat_filename> <python_exe
 
 ### Tab: 2 · Plot Quality
 
-**What runs:** `python 2_plot_pseudotime_quality.py <mat_file> <json_file> <output_image>`  
-or `python 2b_plot_pseudotime_quality_block1.py ...` (Block1)
+**What runs:** `python step02_plot_pseudotime_quality.py <mat_file> <json_file> <output_image>`  
+or `python step02b_plot_pseudotime_quality_block1.py ...` (Block1)
 
 | Field | What to put here |
 |-------|-----------------|
@@ -140,8 +140,8 @@ or `python 2b_plot_pseudotime_quality_block1.py ...` (Block1)
 
 ### Tab: 3 · Parse Segments
 
-**What runs:** `python 3_parse.py <data_folder> <output_folder>`  
-or `python 3b_parse_block1.py ...` (Block1)
+**What runs:** `python step03_parse.py <data_folder> <output_folder>`  
+or `python step03b_parse_block1.py ...` (Block1)
 
 | Field | What to put here |
 |-------|-----------------|

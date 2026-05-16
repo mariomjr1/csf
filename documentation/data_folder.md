@@ -145,7 +145,7 @@ For each sequence in `pseudotime_mapping.json`, the pipeline finds the matching 
 ### `pseudotime_mapping.json` — timing map
 
 **Required:** Before Steps 2 and 3  
-**Created by:** Step 1 (`1_times_acquisition.sh` or `1b_times_acquisition_block1.sh`)  
+**Created by:** Step 1 (`step01_times_acquisition.sh` or `step01b_times_acquisition_block1.sh`)  
 **Used by:** Step 2, Step 3
 
 This file is the output of Step 1 and the input to Steps 2 and 3. It is automatically saved to the data folder when Step 1 finishes.
