@@ -24,16 +24,13 @@ import os
 import re
 import sys
 
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 
-# ── Paths ──────────────────────────────────────────────────────────────────────
-DATA_DIR   = '/Users/mariomjr/Desktop/pseudotime/data'
-OUTPUT_DIR = '/Users/mariomjr/Desktop/pseudotime/parsed'
-JSON_FILE  = os.path.join(DATA_DIR, 'pseudotime_mapping.json')
-TSV_FILE   = os.path.join(DATA_DIR, 'dicominfo_ses-01.tsv')
-LOG_FILE   = os.path.join(OUTPUT_DIR, 'unmatched_sequences.log')
+from _common import _TASK_PATTERNS, _series_desc_to_task, _tr_from_json
 
 CHANNEL_NAMES  = ['RESP', 'RPIEZO', 'STIMTRIG', 'MRTRIG']
 CHANNEL_COLORS = {'RESP': 'blue', 'RPIEZO': 'red', 'STIMTRIG': 'orange', 'MRTRIG': 'green'}
@@ -99,37 +96,6 @@ def load_channels(mat_path):
 def load_mapping(json_path):
     with open(json_path) as f:
         return json.load(f)
-
-
-# ── series_description → BIDS task name ───────────────────────────────────────
-_TASK_PATTERNS = [
-    (re.compile(r'REST_ep2d',      re.IGNORECASE), 'rest'),
-    (re.compile(r'ContinuousStim', re.IGNORECASE), 'ContinuousStim'),
-    (re.compile(r'BlockStim',      re.IGNORECASE), 'BlockStim'),
-    (re.compile(r'TOPUP_AP',       re.IGNORECASE), 'AP'),
-    (re.compile(r'TOPUP_PA',       re.IGNORECASE), 'PA'),
-    (re.compile(r'FreeBreathe',    re.IGNORECASE), 'FreeBreath'),
-    (re.compile(r'PaceBreathe',    re.IGNORECASE), 'PaceBreath'),
-    (re.compile(r'BEAT_1p6',       re.IGNORECASE), 'BEAT'),
-]
-
-def _series_desc_to_task(series_desc):
-    for pattern, task in _TASK_PATTERNS:
-        if pattern.search(series_desc):
-            return task
-    return None
-
-
-def _tr_from_json(fname, data_dir):
-    """Read RepetitionTime from the BIDS JSON sidecar for this sequence."""
-    if not data_dir:
-        return None
-    path = os.path.join(data_dir, fname)
-    try:
-        with open(path) as f:
-            return json.load(f).get('RepetitionTime')
-    except Exception:
-        return None
 
 
 def load_durations(tsv_path, pseudotime_mapping, data_dir=None):
@@ -263,9 +229,11 @@ def plot_segment(segment, title, plot_path):
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
-    # Allow overriding paths via CLI: python 3_parse.py <data_dir> <output_dir>
-    data_dir   = sys.argv[1] if len(sys.argv) > 1 else DATA_DIR
-    output_dir = sys.argv[2] if len(sys.argv) > 2 else OUTPUT_DIR
+    if len(sys.argv) < 3:
+        print("Usage: step03_parse.py <data_dir> <output_dir>")
+        sys.exit(1)
+    data_dir   = sys.argv[1]
+    output_dir = sys.argv[2]
     json_file  = os.path.join(data_dir, 'pseudotime_mapping.json')
     tsv_file   = os.path.join(data_dir, 'dicominfo_ses-01.tsv')
     log_file   = os.path.join(output_dir, 'unmatched_sequences.log')

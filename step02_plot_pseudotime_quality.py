@@ -15,17 +15,13 @@ import sys
 import os
 import scipy.io as sio
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from datetime import datetime
 
-def time_to_seconds(time_str):
-    """HH:MM:SS.ffffff → total seconds"""
-    try:
-        parts = time_str.split(':')
-        return int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2])
-    except:
-        return None
+from _common import _TASK_PATTERNS, _series_desc_to_task, _tr_from_json
 
 def load_mat_data(mat_path, sampling_rate=1000):
     """Load physiological data from .mat file"""
@@ -66,37 +62,6 @@ def load_pseudotime_mapping(json_path):
     except Exception as e:
         print(f"ERROR loading pseudotime mapping: {e}")
         return None
-
-# ── series_description → BIDS task name ───────────────────────────────────────
-_TASK_PATTERNS = [
-    (re.compile(r'REST_ep2d',      re.IGNORECASE), 'rest'),
-    (re.compile(r'ContinuousStim', re.IGNORECASE), 'ContinuousStim'),
-    (re.compile(r'BlockStim',      re.IGNORECASE), 'BlockStim'),
-    (re.compile(r'TOPUP_AP',       re.IGNORECASE), 'AP'),
-    (re.compile(r'TOPUP_PA',       re.IGNORECASE), 'PA'),
-    (re.compile(r'FreeBreathe',    re.IGNORECASE), 'FreeBreath'),
-    (re.compile(r'PaceBreathe',    re.IGNORECASE), 'PaceBreath'),
-    (re.compile(r'BEAT_1p6',       re.IGNORECASE), 'BEAT'),
-]
-
-def _series_desc_to_task(series_desc):
-    for pattern, task in _TASK_PATTERNS:
-        if pattern.search(series_desc):
-            return task
-    return None
-
-
-def _tr_from_json(fname, data_dir):
-    """Read RepetitionTime from the BIDS JSON sidecar for this sequence."""
-    if not data_dir:
-        return None
-    path = os.path.join(data_dir, fname)
-    try:
-        with open(path) as f:
-            return json.load(f).get('RepetitionTime')
-    except Exception:
-        return None
-
 
 def load_dicominfo_durations(dicominfo_path, pseudotime_mapping, data_dir=None):
     """
@@ -391,7 +356,7 @@ def create_visualization(mat_path, json_path, output_path):
 
     Anchor: task-rest_run-01
       Real time:      {anchor_time}
-      Pseudotime:     {anchor_ptime:.3f} s
+      Pseudotime:     {f"{anchor_ptime:.3f} s" if isinstance(anchor_ptime, (int, float)) else anchor_ptime}
 
     Total Sequences: {len(pseudo_times)}
     Total Tasks: {len(sequences)}
@@ -420,9 +385,6 @@ def create_visualization(mat_path, json_path, output_path):
     print("✓ Statistics figure saved!")
 
     return True
-
-DATA_DIR   = '/Users/mariomjr/Desktop/pseudotime/data'
-OUTPUT_DIR = '/Users/mariomjr/Desktop/pseudotime/data/qc_images'
 
 def main():
     if len(sys.argv) >= 4:
