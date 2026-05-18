@@ -10,6 +10,7 @@ Run via:  bash run.sh   (activates Neuroimaging conda env automatically)
 """
 
 import os
+import re
 import sys
 import glob
 import json
@@ -485,6 +486,167 @@ class Step3Panel(ttk.Frame):
             self._console.append(f"[Step 3] Failed (exit {rc}).", "error")
 
 
+# ── Step 4 QC panel ───────────────────────────────────────────────────────────
+
+class Step4Panel(ttk.Frame):
+    """QC — wraps step04_qc.py."""
+
+    _QC_FIELDS = [
+        ("QC_RESP_SNR",         "RESP signal quality (SNR):"),
+        ("QC_RESP_RATE_BPM",    "Breathing rate (bpm):"),
+        ("QC_RESP_REG_CV",      "Breathing regularity (CV %):"),
+        ("QC_CARDIAC_SNR",      "Cardiac signal quality (SNR):"),
+        ("QC_CARDIAC_RATE_BPM", "Heart rate (bpm):"),
+        ("QC_TRIGGER_CV_PCT",   "MR trigger regularity (CV %):"),
+        ("QC_SEQ_COVERAGE",     "Sequence coverage (%):"),
+    ]
+    _STATUS_COLORS = {"ok": "#4ec97b", "warn": "#dcdcaa", "fail": "#f44747"}
+    _STATUS_ICONS  = {"ok": "✓", "warn": "⚠", "fail": "✗"}
+
+    def __init__(self, parent, console, status_var, runner, python_var, **kwargs):
+        super().__init__(parent, padding=14, **kwargs)
+        self._console       = console
+        self._status        = status_var
+        self._runner        = runner
+        self._python_var    = python_var
+        self._kv            = {}
+        self._metric_labels = {}
+
+        ttk.Label(self, text="Step 4 — Quality Control",
+                  font=("Helvetica", 13, "bold")).grid(
+                      row=0, column=0, columnspan=2, sticky="w", pady=(0, 4))
+        ttk.Label(
+            self,
+            text=("Loads the full .mat recording and pseudotime_mapping.json, "
+                  "detects respiratory cycles and cardiac peaks, checks MR trigger "
+                  "regularity and sequence coverage, and scores each metric "
+                  "as pass / warn / fail."),
+            wraplength=580, foreground="gray",
+        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 10))
+
+        self.data_dir   = PathRow(self, "Data folder:",   mode="dir")
+        self.output_dir = PathRow(self, "Output folder:", mode="dir")
+        self.data_dir.grid(row=2, column=0, columnspan=2, sticky="ew", pady=3)
+        self.output_dir.grid(row=3, column=0, columnspan=2, sticky="ew", pady=3)
+
+        ttk.Separator(self).grid(row=4, column=0, columnspan=2, sticky="ew", pady=8)
+
+        btn_row = ttk.Frame(self)
+        btn_row.grid(row=5, column=0, columnspan=2, sticky="w")
+        self._run_btn = ttk.Button(btn_row, text="▶  Run QC", command=self._run)
+        self._run_btn.pack(side="left")
+        self._progress = ttk.Progressbar(btn_row, mode="indeterminate", length=180)
+        self._progress.pack(side="left", padx=12)
+
+        ttk.Separator(self).grid(row=6, column=0, columnspan=2, sticky="ew", pady=8)
+
+        # ── Two-column: metrics readout  |  guidance ──────────────────────
+        left = ttk.LabelFrame(self, text="QC Metrics", padding=(10, 6))
+        left.grid(row=7, column=0, sticky="nsew", padx=(0, 6))
+
+        for i, (key, label) in enumerate(self._QC_FIELDS):
+            ttk.Label(left, text=label, anchor="w", width=30).grid(
+                row=i, column=0, sticky="w", pady=2)
+            lbl = tk.Label(left, text="—", width=20, anchor="w",
+                           bg="#2d2d2d", fg="#888888",
+                           font=("Menlo", 11), relief="flat")
+            lbl.grid(row=i, column=1, sticky="w", padx=(4, 0))
+            self._metric_labels[key] = lbl
+
+        right = ttk.LabelFrame(self, text="What to check", padding=(10, 6))
+        right.grid(row=7, column=1, sticky="nsew")
+
+        _guidance = (
+            "RESP SNR > 5  — breathing belt well fitted\n"
+            "  ⚠ 2–5: check belt; subject may be breathing shallowly\n"
+            "  ✗ < 2: signal too noisy — re-check sensor placement\n\n"
+            "Breathing rate 8–20 bpm  — normal adult range\n"
+            "  ⚠ outside range: possible breath-hold or hyperventilation\n\n"
+            "Breathing regularity CV < 20 %  — consistent cycles\n"
+            "  ⚠ 20–40 %: irregular breathing; can corrupt csf_velocity\n"
+            "    phase-binning (step 3–4 in that pipeline)\n\n"
+            "Cardiac SNR > 5  — piezo detecting heartbeat clearly\n"
+            "  ⚠ low: sensor poorly placed or signal absent\n\n"
+            "Heart rate 50–100 bpm  — normal resting range\n\n"
+            "MR trigger CV < 5 %  — triggers at exactly 1 TR apart\n"
+            "  ⚠ high: missed/doubled triggers → wrong pseudotime\n"
+            "    Re-run Step 1 and inspect pseudotime_mapping.json\n\n"
+            "Sequence coverage > 80 %  — recording covers the session\n"
+            "  ⚠ low: gaps between sequences or incomplete mapping"
+        )
+        txt = tk.Text(right, wrap="word", font=("Menlo", 10),
+                      bg="#1e1e1e", fg="#d4d4d4",
+                      relief="flat", state="normal", width=38)
+        txt.insert("1.0", _guidance)
+        txt.config(state="disabled")
+        txt.pack(fill="both", expand=True)
+
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
+
+    def populate(self, data_dir="", output_dir=""):
+        if data_dir:   self.data_dir.set(data_dir)
+        if output_dir: self.output_dir.set(output_dir)
+
+    def _run(self):
+        data_dir   = self.data_dir.get()
+        output_dir = self.output_dir.get() or os.path.join(data_dir, "qc")
+        self.output_dir.set(output_dir)
+
+        if not os.path.isdir(data_dir):
+            messagebox.showerror("Error", "Select a valid data folder.")
+            return
+
+        script = SCRIPTS_ROOT / "step04_qc.py"
+        if not script.exists():
+            messagebox.showerror("Error", f"Script not found:\n{script}")
+            return
+
+        python_exe = self._python_var.get() or sys.executable
+        cmd = [python_exe, str(script), data_dir, output_dir]
+
+        self._console.separator()
+        self._console.append(f"[Step 4 QC]  {data_dir}  →  {output_dir}", "info")
+        self._console.separator()
+
+        self._run_btn.config(state="disabled")
+        self._progress.start(10)
+        self._status.set("QC running…")
+        self._kv = {}
+
+        self._runner.run(
+            cmd=cmd, cwd=str(SCRIPTS_ROOT),
+            on_line=self._on_line,
+            on_done=self._done,
+        )
+
+    def _on_line(self, line):
+        self._console.append(line)
+        m = re.match(r"^([A-Z][A-Z0-9_]+)=(.+)$", line)
+        if m:
+            self._kv[m.group(1)] = m.group(2).strip()
+            self._refresh_metrics()
+
+    def _refresh_metrics(self):
+        for key, lbl in self._metric_labels.items():
+            val = self._kv.get(key)
+            st  = self._kv.get(f"{key}_STATUS")
+            if val is not None:
+                icon  = self._STATUS_ICONS.get(st, "")
+                color = self._STATUS_COLORS.get(st, "#d4d4d4")
+                lbl.config(text=f"{icon}  {val}" if icon else val, fg=color)
+
+    def _done(self, rc):
+        self._progress.stop()
+        self._run_btn.config(state="normal")
+        if rc == 0:
+            self._status.set("QC complete ✓")
+            self._console.append("[Step 4 QC] Finished successfully.", "ok")
+        else:
+            self._status.set(f"QC failed (exit {rc})")
+            self._console.append(f"[Step 4 QC] Failed (exit {rc}).", "error")
+
+
 # ── Global config banner ───────────────────────────────────────────────────────
 
 class ConfigBanner(ttk.LabelFrame):
@@ -496,7 +658,7 @@ class ConfigBanner(ttk.LabelFrame):
         kwargs.setdefault("padding", (10, 6))
         super().__init__(parent, text="Quick Setup — auto-fill all steps from a data folder",
                          **kwargs)
-        self._steps = steps  # (step1, step2, step3) set after construction
+        self._steps = steps  # (step1, step2, step3, step4) set after construction
 
         self.data_dir = PathRow(self, "Data folder:", mode="dir",
                                 on_change=self._propagate)
@@ -512,7 +674,7 @@ class ConfigBanner(ttk.LabelFrame):
     def _propagate(self, path):
         if not os.path.isdir(path):
             return
-        step1, step2, step3 = self._steps
+        step1, step2, step3, step4 = self._steps
 
         # MAT file
         mats = sorted(
@@ -534,6 +696,7 @@ class ConfigBanner(ttk.LabelFrame):
         step1.populate(data_dir=path, mat_file=mat)
         step2.populate(mat_file=mat, json_file=js, output_img=out_img)
         step3.populate(data_dir=path, output_dir=out_dir)
+        step4.populate(data_dir=path, output_dir=os.path.join(path, "qc"))
 
 
 # ── Main application window ────────────────────────────────────────────────────
@@ -595,15 +758,17 @@ class App(tk.Tk):
         self._step1 = Step1Panel(nb, None, self._status_var, self._runner, self._python_var)
         self._step2 = Step2Panel(nb, None, self._status_var, self._runner, self._python_var)
         self._step3 = Step3Panel(nb, None, self._status_var, self._runner, self._python_var)
+        self._step4 = Step4Panel(nb, None, self._status_var, self._runner, self._python_var)
 
         nb.add(self._step1, text="  1 · Compute Pseudotime  ")
         nb.add(self._step2, text="  2 · Plot Quality  ")
         nb.add(self._step3, text="  3 · Parse Segments  ")
+        nb.add(self._step4, text="  4 · QC  ")
 
         # ── Quick setup banner (needs step refs) ───────────────────────────
         self._banner = ConfigBanner(
             self,
-            steps=(self._step1, self._step2, self._step3),
+            steps=(self._step1, self._step2, self._step3, self._step4),
             padding=(10, 6),
         )
         # Insert banner between separator and notebook
@@ -622,7 +787,7 @@ class App(tk.Tk):
                    command=self._console.clear).pack(side="right")
 
         # Wire console into step panels
-        for panel in (self._step1, self._step2, self._step3):
+        for panel in (self._step1, self._step2, self._step3, self._step4):
             panel._console = self._console
 
         # ── Status bar ─────────────────────────────────────────────────────

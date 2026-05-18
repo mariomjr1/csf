@@ -14,6 +14,7 @@ Each step has two variants — one per LabChart export format. Select the correc
 | 1 | `step01_times_acquisition.sh` | `step01b_times_acquisition_block1.sh` | Detects MR triggers, computes pseudotime for each sequence, saves `pseudotime_mapping.json` |
 | 2 | `step02_plot_pseudotime_quality.py` | `step02b_plot_pseudotime_quality_block1.py` | Visualises all 4 channels with colour-coded acquisition bars |
 | 3 | `step03_parse.py` | `step03b_parse_block1.py` | Cuts the recording into per-sequence `.mat` files and plots |
+| 4 | `step04_qc.py` | _(same script, handles both formats)_ | QC report: signal SNR, breathing rate/regularity, cardiac rate, trigger regularity, sequence coverage |
 
 Run all steps through the graphical interface: `bash gui/run.sh [conda_env_name]`
 
@@ -49,7 +50,7 @@ bash gui/run.sh MyEnv
 
 # 2. In the Quick Setup banner, browse to your data folder — all fields fill automatically.
 # 3. Select the MAT file format (Classic or Block1) on each step tab.
-# 4. Run Step 1 → Step 2 → Step 3 in order.
+# 4. Run Step 1 → Step 2 → Step 3 → Step 4 (QC) in order.
 ```
 
 See the full walkthrough in [documentation/gui.md](documentation/gui.md).
@@ -80,6 +81,7 @@ pseudotime/
 ├── step02b_plot_pseudotime_quality_block1.py  ← Step 2 — block1 format
 ├── step03_parse.py                        ← Step 3 — classic format
 ├── step03b_parse_block1.py                ← Step 3 — block1 format
+├── step04_qc.py                           ← Step 4 — QC (both formats)
 ├── gui/
 │   ├── app.py        ← main GUI window (format selector on every step)
 │   ├── runner.py     ← thread-safe subprocess runner
